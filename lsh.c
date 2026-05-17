@@ -1,3 +1,5 @@
+// 			      * ~  Shinigami-Px3  ~ *
+
 /***************************************************************************//**
 
   @file         main.c
@@ -20,9 +22,16 @@
 /*
   Function Declarations for builtin shell commands:
  */
+
 int lsh_cd(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
+// +++ ---      * Shinigami ~
+int lsh_pwd(char **args);
+int lsh_echo(char **args);
+int lsh_history(char **args);
+int lsh_env(char **args);
+
 
 /*
   List of builtin commands, followed by their corresponding functions.
@@ -30,13 +39,33 @@ int lsh_exit(char **args);
 char *builtin_str[] = {
   "cd",
   "help",
-  "exit"
+  "exit",
+// +++ ---	* Shinigami ~
+  "pwd",
+  "echo",
+  "history",
+  "env"
+
 };
+
+//~~~~~~~~~~~~~~~~~~~~~~~~
+
+#define MAX_HISTORY 100
+
+char *history[MAX_HISTORY];
+int history_count = 0;
+
+// ----------------------
 
 int (*builtin_func[]) (char **) = {
   &lsh_cd,
   &lsh_help,
-  &lsh_exit
+  &lsh_exit,
+// +++ ---      * Shinigami ~
+  &lsh_pwd,
+  &lsh_echo,
+  &lsh_history,
+  &lsh_env
 };
 
 int lsh_num_builtins() {
@@ -63,6 +92,78 @@ int lsh_cd(char **args)
   }
   return 1;
 }
+
+// --------------------------------------------
+/*               functoins                   */
+
+// +++ ---      * Shinigami ~
+
+void lsh_add_to_history(char *line)
+{
+    if (line == NULL || strlen(line) == 0)
+        return;
+    if (history_count < MAX_HISTORY){
+        history[history_count] = strdup(line);
+        history_count++;
+    }
+}
+
+// +++ ---      * Shinigami ~
+
+int lsh_pwd(char **args)
+{
+    char cwd[1024];
+
+    if (getcwd(cwd, sizeof(cwd)) != NULL){
+        printf("%s\n",cwd);
+    } else {
+        perror("pwd");
+    }
+    return 1;
+}
+
+// +++ ---      * Shinigami ~
+
+int lsh_echo(char **args)
+{
+    int i = 1;
+
+    while (args[i] != NULL){
+        printf("%s",args[i]);
+
+        if (args[i+1] != NULL)
+            printf(" ");
+
+        i++;
+    }
+    printf("\n");
+    return 1;
+}
+
+// +++ ---      * Shinigami ~
+
+int lsh_history(char **args)
+{
+    for (int i = 0; i< history_count; i++) {
+        printf("%d %s\n", i + 1 ,history[i]);
+    }
+    return 1;
+}
+
+// +++ ---      * Shinigami ~
+
+extern char **environ;
+
+int lsh_env(char **args)
+{
+    for (char **env = environ ; *env != NULL ; env++ ){
+        printf("%s\n", *env);
+    }
+    return 1;
+
+}
+
+// --------------------------------------------
 
 /**
    @brief Builtin command: print help.
@@ -254,8 +355,11 @@ void lsh_loop(void)
   int status;
 
   do {
-    printf("> ");
+    printf("\033[36m> \033[0m ");
     line = lsh_read_line();
+
+// +++ ---      * Shinigami ~
+    lsh_add_to_history(line);
     args = lsh_split_line(line);
     status = lsh_execute(args);
 
@@ -273,7 +377,7 @@ void lsh_loop(void)
 int main(int argc, char **argv)
 {
   // Load config files, if any.
-
+    printf("\033[32m ! Wellcom to Shinimgai SHELL ! \033[0m \n");
   // Run command loop.
   lsh_loop();
 
@@ -281,4 +385,5 @@ int main(int argc, char **argv)
 
   return EXIT_SUCCESS;
 }
+
 
